@@ -1,0 +1,18 @@
+# macOS
+.DS_Store
+
+# Swift / SwiftPM
+.build/
+.swiftpm/
+Package.resolved
+
+# Xcode
+*.xcuserdatap*
+xcuserdata/
+DerivedData/
+*.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Python (assets/ 의 스프라이트 추출·갤러리 생성 스크립트용)
+__pycache__/
+*.pyc
+venv/
