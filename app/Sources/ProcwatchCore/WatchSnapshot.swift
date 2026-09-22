@@ -25,7 +25,7 @@ public struct WatchSnapshot: Sendable {
     public let watchedTotal: Int                // topWatched 상한과 무관한 전체 수. 메뉴가 두 목록 모두에 「외 N건」을 붙이므로 runawayTotal과 짝으로 둔다
 
     // 에지 — 코어가 게시마다 한 번만 계산
-    public let tripped: [ProcRowView]           // 이번에 폭주 에지가 났고 그 식별자가 한 번도 배너를 받지 않은 것만
+    public let tripped: [ProcRowView]           // 이번에 폭주 에지가 났고 판정기가 그 식별자에 배너 에지를 한 번도 내지 않은 것만
     public let cleared: [ProcIdentity]          // 폭주→비폭주 에지. 진정, 상환, 편집(판정기), 종료, 정체성 단절(엔진)
 
     public init(

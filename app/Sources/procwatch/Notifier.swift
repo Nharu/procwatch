@@ -3,7 +3,8 @@ import ProcwatchCore
 import UserNotifications
 
 /// 폭주 에지를 배너로 알린다. 받는 것은 스냅숏의 `tripped`·`cleared` 에지뿐이고 판정
-/// 상태를 기억하지 않는다. 갖는 것은 요청 id → 식별자 집합 지도 하나다.
+/// 상태를 기억하지 않는다. 갖는 것은 요청 id → 식별자 집합 지도와 게시하지 못한 배너의
+/// 식별자 집합 둘이다.
 @MainActor
 final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     static let threadIdentifier = "runaway"
@@ -15,6 +16,9 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     private let center: UNUserNotificationCenter?
     /// 요청 id → 아직 `cleared` 되지 않은 식별자.
     private var outstanding: [String: Set<ProcIdentity>] = [:]
+    /// 권한 미정이나 `center.add` 실패로 게시하지 못한 식별자. `runaway` 행에 다시 보이면
+    /// 게시를 다시 시도한다.
+    private var undelivered = UndeliveredBanners()
 
     private(set) var authorization: UNAuthorizationStatus = .notDetermined
     /// 배너를 누르면 드롭다운을 연다.
@@ -62,14 +66,18 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// 스냅숏 하나의 에지를 처리한다.
     func handle(_ snapshot: WatchSnapshot) {
         if !snapshot.cleared.isEmpty { remove(cleared: snapshot.cleared) }
-        guard !snapshot.tripped.isEmpty else { return }
-        let rows = snapshot.tripped
+        let rows = undelivered.takeAttempt(from: snapshot)
+        guard !rows.isEmpty else { return }
         let seq = snapshot.seq
         let sustainSeconds = rows.map(\.creditSeconds)
         Task {
             await refreshAuthorization()
-            // 권한이 없으면 조용히 건너뛰고 빨간 키위가 레벨 신호를 계속 진다.
-            guard enabled, let center else { return }
+            // 권한이 없으면 게시를 건너뛰고 빨간 키위가 레벨 신호를 계속 진다. 거부면 미배달을
+            // 버리고, 아직 정해지지 않았으면 다음 스냅숏에서 다시 시도하도록 되돌린다.
+            guard enabled, let center else {
+                if authorization == .denied { undelivered.discardAll() } else { undelivered.putBack(rows) }
+                return
+            }
             let identifier = rows.count == 1
                 ? "runaway-\(rows[0].identity.notificationSuffix)"
                 : "runaway-batch-\(seq)"
@@ -81,7 +89,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
             content.sound = .default
             outstanding[identifier] = Set(rows.map(\.identity))
             let request = UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
-            try? await center.add(request)
+            do {
+                try await center.add(request)
+            } catch {
+                undelivered.putBack(rows)
+            }
         }
     }
 
