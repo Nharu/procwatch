@@ -71,6 +71,15 @@ struct HarnessError: Error, CustomStringConvertible {
     let description: String
 }
 
+/// 스트림을 소비하는 태스크가 받은 첫 스냅숏을 시험 쪽으로 건네는 상자.
+actor SnapshotBox {
+    private(set) var value: WatchSnapshot?
+
+    func store(_ snapshot: WatchSnapshot) {
+        if value == nil { value = snapshot }
+    }
+}
+
 /// `FakeProcessSource` + `FakeClock` + `tick()` 직접 호출.
 struct EngineHarness {
     let source = FakeProcessSource()
@@ -468,6 +477,46 @@ final class SamplerEngineTests: XCTestCase {
         XCTAssertTrue(after.notified)
         XCTAssertEqual(after.steps, before.steps + 1, "두 주기를 걸친 Δt 한 걸음")
         XCTAssertEqual(after.credit, before.credit + 10, accuracy: 1e-9)
+    }
+
+    // MARK: - 생산 샘플링 경로
+
+    /// 다른 시험은 전부 `tick()` 을 직접 부르므로, `start()` 가 거는 타이머의 이벤트
+    /// 핸들러 — Swift task 가 아닌 순수 GCD 블록에서 `assumeIsolated` 로 틱을 동기
+    /// 실행하는 유일한 생산 경로 — 는 어느 시험도 지나지 않았다. 그 블록에서 격리 검사가
+    /// 거짓을 답하면 `assumeIsolated` 가 그것을 치명적 오류로 바꾸어 첫 틱에서 죽으므로,
+    /// 이 시험은 첫 스냅숏이 도착하는 것 자체로 그 트랩이 없음을 덮는다.
+    func testStart_firstTickRunsThroughThePureGCDTimerHandler() async throws {
+        let h = EngineHarness()
+        h.source.spawn(1, parent: 0, name: "launchd", start: 1, uid: 0)
+        h.source.spawn(10, parent: 1, name: "claude", start: claudeStart, rate: 0.02)
+        h.source.spawn(40, parent: 10, name: "python3", start: 300, rate: 1.0)
+
+        let engine = h.engine
+        let box = SnapshotBox()
+        let arrived = expectation(description: "첫 스냅숏이 생산 타이머 경로로 도착한다")
+        Task {
+            for await snapshot in engine.snapshots {
+                await box.store(snapshot)
+                arrived.fulfill()
+                break
+            }
+        }
+
+        await engine.start()
+
+        // 대기에 상한이 없으면 타이머가 영영 발화하지 않을 때 시험이 실패 대신 멈춘다.
+        await fulfillment(of: [arrived], timeout: 5)
+
+        let received = await box.value
+        let first = try XCTUnwrap(received)
+        XCTAssertEqual(first.seq, 1)
+        XCTAssertEqual(first.rootCount, 1)
+        XCTAssertEqual(first.trackedCount, 1, "claude 자신은 판정 대상이 아니고 자식 하나만 J 에 든다")
+
+        // 첫 틱이 추적 집합을 비지 않은 것으로 보았으므로 주기가 30 에서 5 로 바뀐다.
+        let interval = await engine.timerInterval
+        XCTAssertEqual(interval, 5)
     }
 
     // MARK: - 스냅숏 조립
