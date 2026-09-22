@@ -307,6 +307,36 @@ final class SamplerEngineTests: XCTestCase {
         XCTAssertEqual(snapshot.trackedCount, 1)
     }
 
+    /// 고아가 된 감시 대상이 그 뒤에 새로 포크한 워커도 판정 대상이 되고 폭주로 잡힌다.
+    /// E4 는 고아 자신이 계속 판정되는 데서 멈추므로 그 아래 새 가지는 덮지 못한다.
+    func testNewChildOfAnOrphanedTargetIsJudgedAndTrips() async throws {
+        let h = EngineHarness()
+        _ = basicTree(h, childRate: 0)
+        try await h.first()
+        await h.steps(2)
+
+        h.source.kill(10)
+        h.source.kill(30)
+        h.source.reparent(40, to: 1)
+        let adopted = try await h.published()
+        XCTAssertEqual(adopted.rootCount, 0)
+        XCTAssertEqual(adopted.trackedCount, 1)
+
+        // 입양된 뒤에 새 자식을 포크한다 — 폭주하는 쪽은 대개 이 워커다.
+        let worker = h.source.spawn(50, parent: 40, name: "node", start: 400, rate: 1.0)
+        let warming = try await h.published()
+        XCTAssertEqual(warming.trackedCount, 2, "고아의 새 자식도 판정 대상이다")
+        let judged = try await h.state(worker).judged
+        XCTAssertTrue(judged)
+
+        let snapshots = await h.steps(12)
+        XCTAssertEqual(snapshots.flatMap(\.tripped).map(\.identity), [worker], "배너는 새 자식에서 한 번")
+        let last = try XCTUnwrap(snapshots.last)
+        XCTAssertEqual(last.runawayTotal, 1)
+        XCTAssertEqual(last.runaway.map(\.identity), [worker])
+        XCTAssertEqual(last.trackedCount, 2)
+    }
+
     // MARK: - E6
 
     func testE6_unmeasurableRowIsKeptAndRecoversWithOneLongStep() async throws {

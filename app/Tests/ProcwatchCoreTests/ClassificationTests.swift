@@ -198,6 +198,32 @@ final class TreeResolverTests: XCTestCase {
         XCTAssertTrue(sets.judged.isEmpty)
     }
 
+    /// 고아가 된 뒤에 새로 만든 자식도 판정 대상이다 — sticky 는 결과 집합에만 합쳐지는
+    /// 것이 아니라 다음 틱의 탐색 시작점으로 다시 들어간다.
+    func testStickyOrphanIsReinjectedSoItsNewChildIsJudged() {
+        let resolver = TreeResolver()
+        let claude = identity(100, 10)
+        let orphan = identity(200, 20)
+        let worker = identity(300, 30)
+
+        var sets = resolver.resolve(
+            rows: [row(1, parent: 0, start: 0), row(100, parent: 1, start: 10), row(200, parent: 100, start: 20)],
+            claude: [claude], displayName: name)
+        XCTAssertEqual(sets.judged, [orphan])
+
+        // claude 가 끝나 고아가 된 뒤에 그 고아가 새 자식을 만들었다.
+        sets = resolver.resolve(
+            rows: [row(200, parent: 1, start: 20), row(300, parent: 200, start: 30)],
+            claude: [], displayName: name)
+        XCTAssertEqual(sets.judged, [orphan, worker])
+        XCTAssertEqual(sets.ancestry[worker], ["p100", "p200", "p300"],
+                       "새 가지는 고아의 고정된 조상 경로에 이어 붙는다")
+
+        // 고아까지 끝나도 그 자식은 sticky 로 계속 판정된다 — 재투입은 한 세대에서 끝나지 않는다.
+        sets = resolver.resolve(rows: [row(300, parent: 1, start: 30)], claude: [], displayName: name)
+        XCTAssertEqual(sets.judged, [worker])
+    }
+
     func testDepthLimitStopsTheWalk() {
         var rows = [row(1, parent: 0, start: 0)]
         for depth in 1...(TreeResolver.depthLimit + 5) {

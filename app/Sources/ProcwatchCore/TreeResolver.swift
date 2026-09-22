@@ -5,7 +5,9 @@ import Foundation
 public struct TrackedSets: Sendable {
     /// `C` — claude 로 분류된 식별자(최상위 + 중첩).
     public let claude: Set<ProcIdentity>
-    /// `J` — 판정 대상. `C` 의 어느 원소에서 내려가 닿는 전부이며 시작 노드 자신은 뺀다.
+    /// `J` — 판정 대상. 시작점 집합(`C` 와 sticky 유지 집합의 합집합)의 어느 원소에서
+    /// 한 간선 이상 내려가 닿는 전부이며, 간선을 하나도 타지 않은 시작 노드 자신은
+    /// sticky 일 때만 든다.
     public let judged: Set<ProcIdentity>
     /// 처음 본 순간의 경로로 고정된 조상 이름들.
     public let ancestry: [ProcIdentity: [String]]
@@ -14,7 +16,7 @@ public struct TrackedSets: Sendable {
     public var tracked: Set<ProcIdentity> { claude.union(judged) }
 }
 
-/// `C` 에서 ppid→자식 지도를 내려가 `J` 를 만든다.
+/// `C` 와 sticky 유지 집합을 시작점으로 ppid→자식 지도를 내려가 `J` 를 만든다.
 public final class TreeResolver {
     /// BFS 깊이 상한.
     public static let depthLimit = 64
@@ -44,16 +46,25 @@ public final class TreeResolver {
         // 내려올 때 `J` 에 들어가지 못한다.
         var expanded: Set<ProcIdentity> = []
 
-        // 먼저 시작한 claude 부터 펼친다. 간선 가드 때문에 조상은 늘 후손보다 먼저
+        // sticky — 이전 틱 `J` 가운데 아직 테이블에 있는 것. 결과 집합에만 합치면 부모가
+        // 끝나 입양된 뒤에 새로 생긴 자식을 아무도 펼치지 않으므로, 시작점으로 다시 넣는다.
+        // 틱 비용은 늘지 않는다 — 살아 있는 조상 아래에 있는 원소는 그쪽 탐색에서 이미
+        // 펼쳐져 `expanded` 가 거르고, sticky 원소는 이번 틱 행을 이미 갖고 있다.
+        let living = Set(rows.map(\.identity))
+        let sticky = previousJudged.intersection(living)
+
+        // 먼저 시작한 시작점부터 펼친다. 간선 가드 때문에 조상은 늘 후손보다 먼저
         // 시작했으므로, 조상 경로가 중첩 claude 자신의 경로보다 먼저 고정된다.
-        let starts = claude.sorted {
+        let starts = claude.union(sticky).sorted {
             ($0.startSec, $0.startUsec, $0.pid) < ($1.startSec, $1.startUsec, $1.pid)
         }
         for start in starts {
             guard let startRow = rowsByPID[start.pid], startRow.identity == start else { continue }
             guard expanded.insert(start).inserted else { continue }
+            // sticky 시작점은 처음 보였을 때 고정된 경로를 갖고 있으므로 새 가지가 그 뒤에
+            // 이어 붙는다. 최상위 claude 는 항목이 없어 자기 이름 하나로 시작한다.
             var frontier: [(row: ProcessRow, depth: Int, path: [String])] = [
-                (startRow, 0, [displayName(start)])
+                (startRow, 0, ancestryByIdentity[start] ?? [displayName(start)])
             ]
 
             while !frontier.isEmpty {
@@ -75,9 +86,8 @@ public final class TreeResolver {
             }
         }
 
-        // sticky — 이전 틱 `J` 가운데 아직 테이블에 있는 것과 합집합.
-        let living = Set(rows.map(\.identity))
-        judged.formUnion(previousJudged.intersection(living))
+        // 간선을 하나도 타지 않은 sticky 시작 노드 자신은 이 줄이 `J` 에 넣는다.
+        judged.formUnion(sticky)
         previousJudged = judged
         ancestryByIdentity = ancestryByIdentity.filter { living.contains($0.key) }
 
