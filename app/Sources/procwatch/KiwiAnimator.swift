@@ -48,6 +48,12 @@ final class KiwiAnimator {
         reevaluate()
     }
 
+    /// 사용자 멈춤. 켜면 `stop()` 이 타이머를 멈추고 프레임 00 을 그린다.
+    func setUserPaused(_ paused: Bool) {
+        conditions.userPaused = paused
+        reevaluate()
+    }
+
     /// 빨강이 바뀌었을 때처럼 같은 프레임을 다시 그려야 할 때.
     func redraw() { render(frameIndex) }
 

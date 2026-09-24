@@ -67,6 +67,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         animator?.update(peakPercent: peakPercent, rootCount: 1)
     }
 
+    /// 걸음 멈춤을 애니메이터에 넘긴다. 키위 이미지가 없으면 아무 일도 하지 않는다.
+    func setWalkPaused(_ paused: Bool) {
+        animator?.setUserPaused(paused)
+    }
+
     /// 배너를 누르면 드롭다운을 연다.
     func openMenu() {
         statusItem.button?.performClick(nil)

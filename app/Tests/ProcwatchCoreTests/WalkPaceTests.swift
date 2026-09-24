@@ -39,4 +39,18 @@ final class WalkPaceTests: XCTestCase {
         conditions.screensAsleep = true
         XCTAssertFalse(conditions.walking)
     }
+
+    func testNotPausedByDefault() {
+        let conditions = WalkPace.Conditions(peakPercent: 1, rootCount: 1)
+        XCTAssertFalse(conditions.userPaused)
+        XCTAssertTrue(conditions.walking)
+    }
+
+    func testUserPauseStopsWalkingEvenWhenEverythingElseAllows() {
+        var conditions = WalkPace.Conditions(peakPercent: 1, rootCount: 1)
+        conditions.userPaused = true
+        XCTAssertFalse(conditions.walking)
+        conditions.userPaused = false
+        XCTAssertTrue(conditions.walking)
+    }
 }

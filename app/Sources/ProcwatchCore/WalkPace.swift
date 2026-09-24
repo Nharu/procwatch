@@ -26,6 +26,8 @@ public enum WalkPace {
         public var sessionActive = true
         public var itemVisible = true
         public var windowVisible = true
+        /// 사용자가 드롭다운에서 걸음을 멈췄는가.
+        public var userPaused = false
 
         public init(peakPercent: Double? = nil, rootCount: Int = 0) {
             self.peakPercent = peakPercent
@@ -40,6 +42,7 @@ public enum WalkPace {
                 && sessionActive
                 && itemVisible
                 && windowVisible
+                && !userPaused
         }
     }
 }

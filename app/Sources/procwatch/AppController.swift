@@ -29,6 +29,9 @@ final class AppController: NSObject, NSApplicationDelegate {
         let statusItem = StatusItemController(builder: builder)
         statusItem.onMenuWillOpen = { [notifier] in await notifier.refreshAuthorization() }
         self.statusItem = statusItem
+        // 엔진이 돌기 전에 적용해 재시작 직후에도 한 프레임도 걷지 않는다.
+        statusItem.setWalkPaused(settings.walkPaused)
+        settings.onWalkPausedChange = { [weak statusItem] paused in statusItem?.setWalkPaused(paused) }
         notifier.onActivate = { [weak statusItem] in statusItem?.openMenu() }
 
         let engine = SamplerEngine(

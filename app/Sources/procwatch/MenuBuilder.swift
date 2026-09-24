@@ -66,6 +66,7 @@ final class MenuBuilder: NSObject {
 
         items.append(contentsOf: settingsItems())
         items.append(.separator())
+        if !framesUnavailable { items.append(walkPauseItem()) }
         items.append(contentsOf: loginItems())
         items.append(notificationItem())
         items.append(.separator())
@@ -247,6 +248,16 @@ final class MenuBuilder: NSObject {
 
     @objc private func customThreshold(_ sender: NSMenuItem) { onCustomThreshold?() }
     @objc private func customSustain(_ sender: NSMenuItem) { onCustomSustain?() }
+
+    /// 체크가 켜져 있으면 키위가 걷지 않는다. 감시·판정·알림은 그대로다.
+    private func walkPauseItem() -> NSMenuItem {
+        let item = NSMenuItem(title: "걸음 애니메이션 멈춤", action: #selector(toggleWalkPaused(_:)), keyEquivalent: "")
+        item.target = self
+        item.state = settings.walkPaused ? .on : .off
+        return item
+    }
+
+    @objc private func toggleWalkPaused(_ sender: NSMenuItem) { settings.walkPaused.toggle() }
 
     private func loginItems() -> [NSMenuItem] {
         var items: [NSMenuItem] = []
