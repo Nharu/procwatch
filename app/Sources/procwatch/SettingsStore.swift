@@ -11,17 +11,22 @@ final class SettingsStore {
         static let debugTickLog = "debugTickLog"
         /// 켜져 있으면 표본 타이머를 걸지 않고 걸음 타이머만 둔다.
         static let debugSamplerPaused = "debugSamplerPaused"
+        /// 켜져 있으면 키위가 걷지 않고 프레임 00 으로 서 있는다.
+        static let walkPaused = "walkPaused"
     }
 
     private let defaults: UserDefaults
 
     /// 임계가 바뀌면 부른다. 엔진에 새 불변 설정을 넣는 자리다.
     var onThresholdsChange: ((JudgeParams) -> Void)?
+    /// 걸음 멈춤이 바뀌면 부른다.
+    var onWalkPausedChange: ((Bool) -> Void)?
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         var registration = ThresholdSettings.registrationDefaults
         registration[Key.launchAtLoginDesired] = true
+        registration[Key.walkPaused] = false
         defaults.register(defaults: registration)
     }
 
@@ -37,6 +42,17 @@ final class SettingsStore {
     }
 
     var params: JudgeParams { JudgeParams(settings: thresholds) }
+
+    // MARK: - 걸음
+
+    /// 사용자가 끌 때까지, 재시작 뒤에도 유지된다.
+    var walkPaused: Bool {
+        get { defaults.bool(forKey: Key.walkPaused) }
+        set {
+            defaults.set(newValue, forKey: Key.walkPaused)
+            onWalkPausedChange?(newValue)
+        }
+    }
 
     // MARK: - 로그인 항목
 
