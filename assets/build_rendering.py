@@ -4,7 +4,8 @@ import os, base64, io, html
 FRAMES = '/Users/ian/dev/procwatch/assets/frames2/kiwi'
 OUT    = '/Users/ian/dev/procwatch/docs/kiwi-rendering.html'
 
-# macOS 시스템 레드. 라이트와 다크에서 쓰는 값이 다르다.
+# 후보 비교용 갤러리를 만들 때 쓴 근사 고정값이며 앱은 이 값을 채택하지 않았다.
+# 앱의 빨강은 NSColor.systemRed 이고, 실제 렌더 값은 외형에 따라 시스템이 정한다.
 RED_LIGHT = (255, 59, 48)
 RED_DARK  = (255, 69, 58)
 
