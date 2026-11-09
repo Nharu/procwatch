@@ -12,7 +12,5 @@ xcuserdata/
 DerivedData/
 *.xcodeproj/project.xcworkspace/xcuserdata/
 
-# Python (assets/ 의 스프라이트 추출·갤러리 생성 스크립트용)
-__pycache__/
-*.pyc
-venv/
+# 설계·개발 문서(로컬 전용)
+docs/

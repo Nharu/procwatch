@@ -1,1 +1,1 @@
-{"chicken": {"label": "\ub2ed", "n": 4, "size": [11, 10]}, "dog": {"label": "\uac15\uc544\uc9c0", "n": 6, "size": [16, 10]}, "shepherd": {"label": "\uc170\ud37c\ub4dc", "n": 6, "size": [24, 16]}, "snake": {"label": "\ubc40", "n": 4, "size": [10, 15]}, "chick": {"label": "\ubcd1\uc544\ub9ac", "n": 7, "size": [22, 20]}, "husky": {"label": "\ud5c8\uc2a4\ud0a4", "n": 6, "size": [72, 48]}, "kiwi": {"label": "\ud0a4\uc704\uc0c8", "n": 4, "size": [24, 16]}}
+{"kiwi": {"label": "키위새", "n": 4, "size": [24, 16]}}
