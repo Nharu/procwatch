@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: swift build --package-path app
+
+      - name: Test
+        run: swift test --package-path app
+
+      - name: Assemble app bundle
+        run: bash app/scripts/build-app.sh
+
+      - name: Render cask template
+        run: bash app/scripts/render-cask.sh 0.0.0 0000000000000000000000000000000000000000000000000000000000000000 "$RUNNER_TEMP/procwatch.rb"
+
+      - name: Check cask syntax
+        run: ruby -c "$RUNNER_TEMP/procwatch.rb"
