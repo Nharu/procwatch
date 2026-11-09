@@ -11,7 +11,7 @@ public struct EmaSmoother: Sendable, Equatable {
     public private(set) var rBar: Double?
 
     public init(tau: Double) {
-        precondition(tau > 0, "τ 는 양수여야 한다")
+        precondition(tau > 0, "tau must be positive")
         self.tau = tau
     }
 

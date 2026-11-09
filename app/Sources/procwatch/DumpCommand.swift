@@ -15,7 +15,7 @@ enum DumpCommand {
     static func run(tickLimit: Int?, settings: ThresholdSettings) {
         let params = JudgeParams(settings: settings)
         let core = SamplerCore(source: SystemProcessSource(), clock: SystemMonotonicClock(), params: params)
-        print(String(format: "thresholds: T_hi=%d%% · D=%d분", settings.cpuThresholdPercent, settings.sustainMinutes))
+        print(String(format: "thresholds: T_hi=%d%% · D=%d min", settings.cpuThresholdPercent, settings.sustainMinutes))
 
         var previousRunaway: Set<ProcIdentity> = []
         var tick = 0
@@ -23,7 +23,7 @@ enum DumpCommand {
             tick += 1
             guard let (snapshot, _) = core.tick() else {
                 // 읽기가 실패한 틱은 통째로 건너뛴다. 기준선도 건드리지 않는다.
-                print("tick \(tick): 테이블 읽기 실패 — 이 틱을 건너뜀")
+                print("tick \(tick): table read failed — skipping this tick")
                 sleepOneInterval()
                 continue
             }
@@ -48,7 +48,7 @@ enum DumpCommand {
         let banners = Set(snapshot.tripped.map(\.identity))
         for identity in current.subtracting(previousRunaway).sorted(by: { $0.pid < $1.pid }) {
             let inspection = core.inspect(identity)
-            let suffix = banners.contains(identity) ? "" : " (배너 없음)"
+            let suffix = banners.contains(identity) ? "" : " (no banner)"
             print(String(
                 format: "TRIPPED %@ · pid %d · R̄ %.1f%% · credit %.0f s%@",
                 inspection?.name ?? "?", identity.pid, (inspection?.rBar ?? 0) * 100,
@@ -69,7 +69,7 @@ enum DumpCommand {
             return inspection.rBar
         }
 
-        let head = "tick \(tick): claude \(snapshot.rootCount)개 · 판정 대상 \(snapshot.trackedCount)개"
+        let head = "tick \(tick): claude: \(snapshot.rootCount) · judged: \(snapshot.trackedCount)"
         let stats: String
         if let peak = rootValues.max() {
             let sum = rootValues.reduce(0, +)
@@ -77,7 +77,7 @@ enum DumpCommand {
         } else {
             stats = "peak(ema-max)=warming · sum(ema-sum)=warming"
         }
-        let red = snapshot.anyRunaway ? " · 폭주 \(snapshot.runawayTotal)건" : ""
+        let red = snapshot.anyRunaway ? " · runaway: \(snapshot.runawayTotal)" : ""
         print("\(head) · \(stats)\(red)")
 
         let descendants = core.judgedIdentities
@@ -94,7 +94,7 @@ enum DumpCommand {
             print(String(
                 format: "    %@ · pid %d · %.2f%% · credit %.0f s%@ · %@",
                 DisplayText.name(inspection.name), identity.pid, (inspection.rBar ?? 0) * 100,
-                inspection.credit, inspection.runaway ? " · 폭주" : "", ancestry.isEmpty ? "-" : ancestry
+                inspection.credit, inspection.runaway ? " · runaway" : "", ancestry.isEmpty ? "-" : ancestry
             ))
         }
     }

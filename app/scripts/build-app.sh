@@ -34,6 +34,9 @@ cp app/Bundle/Info.plist "$APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$(git rev-list --count HEAD)" "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 cp assets/frames2/kiwi/0[0-3].png "$APP/Contents/Resources/kiwi/"
+# 앱의 현지화 목록은 Resources 의 .lproj 디렉터리가 정한다.
+cp -R app/Bundle/en.lproj app/Bundle/ko.lproj "$APP/Contents/Resources/"
+plutil -lint "$APP/Contents/Resources/en.lproj/Localizable.strings" "$APP/Contents/Resources/ko.lproj/Localizable.strings"
 rm -rf app/.build/AppIcon.iconset
 swift app/scripts/make-icon.swift assets/frames2/kiwi/00.png app/.build/AppIcon.iconset
 iconutil -c icns -o "$APP/Contents/Resources/AppIcon.icns" app/.build/AppIcon.iconset

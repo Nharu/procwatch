@@ -82,7 +82,7 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
                 ? "runaway-\(rows[0].identity.notificationSuffix)"
                 : "runaway-batch-\(seq)"
             let content = UNMutableNotificationContent()
-            content.title = "폭주 프로세스 감지"
+            content.title = L("notification.title")
             content.body = Self.body(rows, sustainSeconds: sustainSeconds)
             content.threadIdentifier = Self.threadIdentifier
             content.interruptionLevel = .active
@@ -116,11 +116,11 @@ final class Notifier: NSObject, UNUserNotificationCenterDelegate {
     /// 「python3 (pid 1234) — CPU 98%, 32분째 · claude 12345 아래」, 여럿이면 「외 N건」.
     static func body(_ rows: [ProcRowView], sustainSeconds: [Double]) -> String {
         guard let first = rows.first else { return "" }
-        let cpu = first.ratePercent.map { String(format: "CPU %.0f%%", $0) } ?? "CPU 측정 불가"
+        let cpu = first.ratePercent.map { String(format: "CPU %.0f%%", $0) } ?? L("notification.cpuUnmeasurable")
         let minutes = Int((sustainSeconds.first ?? 0) / 60)
-        var text = "\(first.name) (pid \(first.identity.pid)) — \(cpu), \(minutes)분째"
-        if let root = first.ancestry.first { text += " · \(root) 아래" }
-        if rows.count > 1 { text += " 외 \(rows.count - 1)건" }
+        var text = L("notification.body", first.name, Int(first.identity.pid), cpu, minutes)
+        if let root = first.ancestry.first { text += L("notification.under", root) }
+        if rows.count > 1 { text += L("notification.more", rows.count - 1) }
         return text
     }
 

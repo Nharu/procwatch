@@ -21,7 +21,7 @@ if arguments.contains("--dump") {
     if let index = arguments.firstIndex(of: "--thresholds") {
         let next = arguments.index(after: index)
         guard next < arguments.endIndex, let parsed = ThresholdSettings(argument: arguments[next]) else {
-            FileHandle.standardError.write(Data("procwatch: --thresholds 는 t:m 이다(t 5–800 %, m 1–1440 분)\n".utf8))
+            FileHandle.standardError.write(Data("procwatch: --thresholds takes t:m (t 5–800 %, m 1–1440 min)\n".utf8))
             exit(2)
         }
         settings = parsed

@@ -22,8 +22,8 @@ public struct JudgeParams: Sendable, Equatable {
     public static let rClear = 120.0
 
     public init(tHi: Double, d: Double) {
-        precondition(tHi > 0, "T_hi 는 양수여야 한다")
-        precondition(d >= 60, "D 는 60 s 이상이어야 한다")
+        precondition(tHi > 0, "T_hi must be positive")
+        precondition(d >= 60, "D must be at least 60 s")
         self.tHi = tHi
         self.d = d
     }
