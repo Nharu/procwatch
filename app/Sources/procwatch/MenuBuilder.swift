@@ -139,7 +139,7 @@ final class MenuBuilder: NSObject {
 
     static func versionLine() -> String {
         let info = Bundle.main.infoDictionary ?? [:]
-        let short = info["CFBundleShortVersionString"] as? String ?? "0.1.0"
+        let short = info["CFBundleShortVersionString"] as? String ?? "dev"
         let build = info["CFBundleVersion"] as? String ?? L("menu.versionDevBuild")
         return L("menu.version", short, build)
     }
