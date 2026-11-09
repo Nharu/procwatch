@@ -125,7 +125,6 @@ Things a person has to do before the first public release:
     gh repo edit Nharu/procwatch --description "macOS menu bar app that flags runaway processes spawned by Claude Code — alerts only, never kills." --add-topic macos --add-topic menu-bar --add-topic swift --add-topic appkit --add-topic claude-code --add-topic process-monitor --add-topic cpu-monitor
     ```
 
-- [ ] Add a menu bar screenshot to both READMEs (at the `<!-- screenshot: menu bar dropdown -->` comment)
 - [ ] Make the repository public
 
   ```sh

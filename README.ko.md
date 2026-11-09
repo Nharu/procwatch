@@ -8,7 +8,7 @@
 
 Claude Code 에 딸린 부속이 아니라 독립해서 도는 감시기다.
 
-<!-- screenshot: menu bar dropdown -->
+<img src="assets/readme/menu-ko.png" alt="procwatch 메뉴 막대 드롭다운" width="468" height="433">
 
 ## 하는 일
 

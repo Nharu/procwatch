@@ -8,7 +8,7 @@ A macOS menu bar app that finds runaway processes among everything `claude` spaw
 
 It is a standalone monitor, not a plugin or part of Claude Code.
 
-<!-- screenshot: menu bar dropdown -->
+<img src="assets/readme/menu-en.png" alt="procwatch menu bar dropdown" width="551" height="433">
 
 ## What it does
 
