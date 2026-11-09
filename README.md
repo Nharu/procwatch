@@ -1,35 +1,98 @@
+**English** · [한국어](README.ko.md)
+
 # procwatch
 
-claude 가 띄운 모든 후손 프로세스 중 폭주한 것을 찾아 알려 주는 macOS 메뉴 막대 앱.
+<img src="assets/readme/kiwi-walk.gif" alt="procwatch kiwi walking" width="144" height="96">
 
-죽이지 않고 알리기만 한다. Claude Code 에 딸린 부속이 아니라 독립해서 도는 감시기다.
+A macOS menu bar app that finds runaway processes among everything `claude` spawned and tells you about them — it only alerts, it never kills.
 
-## 감시 기준
+It is a standalone monitor, not a plugin or part of Claude Code.
 
-- 대상: `claude` 프로세스의 모든 후손 프로세스
-- 조건: 평활 CPU가 임계(기본 50%, 코어 1개 = 100%) 이상인 깨어 있는 초가 임계 미만인 초보다
-  순으로 지속 시간(기본 30분)만큼 많아지면 보고한다. 임계 미만인 1초가 임계 이상인 1초를 갚는다.
-  임계의 80% 아래로 2분 연속 가라앉거나, 보고 기준의 절반까지 갚거나, 프로세스가 끝나면 해소된다.
-  임계와 지속 시간은 메뉴에서 바꾼다.
-- 조치: 알림만, 자동 종료 없음
+<!-- screenshot: menu bar dropdown -->
 
-## 메뉴 막대 표시
+## What it does
 
-키위새 스프라이트가 걸어 다닌다.
+### Watch rules
 
-- 평상시: 단색 template 렌더 — 시스템이 막대 배경에 맞춰 알아서 흑백을 뒤집는다
-- 폭주 감지 시: 시스템 빨강(`NSColor.systemRed`) — 값을 고정하지 않으며 라이트·다크 외형에 따라 시스템이 정한다
-- 걸음 속도: claude 프로세스의 CPU 사용률에 연동
+- Target: every descendant process of a `claude` process
+- Condition: a process is reported once its awake seconds with smoothed CPU at or above the threshold
+  (default 50%, 1 core = 100%) outnumber those below it by a net sustain time (default 30 min).
+  Each second below the threshold pays back one second above it.
+  It is cleared after 2 min in a row under 80% of the threshold, after paying back to half the
+  report bar, or when the process exits. The threshold and sustain time are set from the menu.
+- Action: a notification only — nothing is ever terminated
 
-## 디렉터리
+### Menu bar icon
 
-| 경로 | 내용 |
+A kiwi sprite walks in the menu bar.
+
+- Normally: a monochrome template image — the system flips it to match the menu bar background
+- When a runaway is detected: system red (`NSColor.systemRed`), left to the system for light and dark appearances
+- Walking speed follows the CPU usage of the `claude` processes; the walk can be paused from the menu
+
+## Install
+
+Apple silicon, macOS 15 or later.
+
+```sh
+brew install --cask nharu/tap/procwatch
+```
+
+## Build from source
+
+Requires a Swift 6 toolchain — Xcode 16 or later, or the Command Line Tools.
+
+```sh
+app/scripts/build-app.sh            # build and sign app/.build/bundle/procwatch.app
+app/scripts/build-app.sh --install  # also copy it to /Applications and launch it
+```
+
+The script builds an arm64 release binary, assembles the bundle and signs it ad hoc.
+
+## Notifications
+
+procwatch asks for notification permission on first launch. If notifications are turned off, the
+menu shows an item that opens the notification settings for procwatch.
+
+## Launch at login
+
+Turn launch at login on or off from the menu. The item is available only when the app is
+installed in `/Applications`.
+
+## Uninstall
+
+First turn off launch at login from the menu, then remove the app:
+
+```sh
+brew uninstall --cask procwatch
+brew uninstall --zap --cask procwatch   # also delete the settings file
+```
+
+If you installed from source:
+
+```sh
+app/scripts/build-app.sh --uninstall
+```
+
+This quits the app, removes its login item, deletes `/Applications/procwatch.app` and clears its settings.
+
+## Development
+
+```sh
+swift test --package-path app
+```
+
+| Path | Contents |
 |---|---|
-| `app/` | Swift 앱 소스 |
-| `assets/` | 스프라이트 원본·추출 프레임·후보 갤러리 생성 스크립트 |
-| `docs/` | 설계 문서와 후보 비교용 HTML |
+| `app/` | Swift package: the app, its core library and tests; build scripts in `app/scripts/` |
+| `assets/` | Kiwi frames the app uses (`frames2/kiwi/`), the source sprite pack (`source/kiwi.zip`), its license notes and the README image |
+| `packaging/homebrew/` | Homebrew cask template |
+| `.github/workflows/` | CI and release workflows |
 
-## 스프라이트 출처
+`docs/` is ignored by git and is not part of the repository. Release procedures are in
+[RELEASING.md](RELEASING.md).
 
-채택한 키위새를 포함해 후보로 검토한 스프라이트는 모두 CC0 다. 작가와 원본 목록은
-`assets/LICENSE-kiwi-family.md` 에 있다.
+## License
+
+[MIT](LICENSE). The kiwi sprites are CC0; the artist and source pack are listed in
+[`assets/LICENSE-kiwi-family.md`](assets/LICENSE-kiwi-family.md).
