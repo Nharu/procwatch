@@ -25,6 +25,27 @@ if [[ "$mode" == "uninstall" ]]; then
     exit 0
 fi
 
+# 번들 버전: PROCWATCH_VERSION 이 있으면 그 값, 없으면 가장 가까운 v<주>.<부>.<수> 태그,
+# 그것도 없으면(태그 없음·얕은 클론) 0.0.0. CFBundleShortVersionString 은 숫자 셋이어야 한다.
+version_pattern='^[0-9]+\.[0-9]+\.[0-9]+$'
+if [[ -n "${PROCWATCH_VERSION:-}" ]]; then
+    if [[ ! "$PROCWATCH_VERSION" =~ $version_pattern ]]; then
+        echo "PROCWATCH_VERSION must be <major>.<minor>.<patch>: $PROCWATCH_VERSION" >&2
+        exit 2
+    fi
+    version="$PROCWATCH_VERSION"
+else
+    tag="$(git describe --tags --match 'v[0-9]*' --abbrev=0 2>/dev/null || true)"
+    version="${tag#v}"
+    [[ "$version" =~ $version_pattern ]] || version="0.0.0"
+fi
+
+# 서명 신원: 없으면 애드혹(-). 공증이 요구하는 hardened runtime 은 애드혹에도 켜고,
+# 보안 타임스탬프는 실제 신원일 때만 붙인다.
+identity="${PROCWATCH_SIGN_IDENTITY:--}"
+sign_flags=(--force --options runtime)
+[[ "$identity" == "-" ]] || sign_flags+=(--timestamp)
+
 swift build --package-path app -c release --arch arm64
 BIN="$(swift build --package-path app -c release --arch arm64 --show-bin-path)/procwatch"
 APP=app/.build/bundle/procwatch.app
@@ -32,6 +53,7 @@ rm -rf "$APP"; mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources/kiwi"
 cp "$BIN" "$APP/Contents/MacOS/procwatch"
 cp app/Bundle/Info.plist "$APP/Contents/Info.plist"
 plutil -replace CFBundleVersion -string "$(git rev-list --count HEAD)" "$APP/Contents/Info.plist"
+plutil -insert CFBundleShortVersionString -string "$version" "$APP/Contents/Info.plist"
 plutil -lint "$APP/Contents/Info.plist"
 cp assets/frames2/kiwi/0[0-3].png "$APP/Contents/Resources/kiwi/"
 # 앱의 현지화 목록은 Resources 의 .lproj 디렉터리가 정한다.
@@ -40,7 +62,7 @@ plutil -lint "$APP/Contents/Resources/en.lproj/Localizable.strings" "$APP/Conten
 rm -rf app/.build/AppIcon.iconset
 swift app/scripts/make-icon.swift assets/frames2/kiwi/00.png app/.build/AppIcon.iconset
 iconutil -c icns -o "$APP/Contents/Resources/AppIcon.icns" app/.build/AppIcon.iconset
-codesign --force --sign - --identifier io.github.nharu.procwatch "$APP"
+codesign "${sign_flags[@]}" --sign "$identity" --identifier io.github.nharu.procwatch "$APP"
 codesign --verify --strict "$APP"
 
 if [[ "$mode" == "install" ]]; then

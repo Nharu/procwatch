@@ -1,6 +1,6 @@
 import AppKit
 import ProcwatchCore
-import UserNotifications
+@preconcurrency import UserNotifications
 
 /// 폭주 에지를 배너로 알린다. 받는 것은 스냅숏의 `tripped`·`cleared` 에지뿐이고 판정
 /// 상태를 기억하지 않는다. 갖는 것은 요청 id → 식별자 집합 지도와 게시하지 못한 배너의
