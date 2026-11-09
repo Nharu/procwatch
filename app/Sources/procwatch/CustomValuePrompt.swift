@@ -10,8 +10,8 @@ enum CustomValuePrompt {
         let alert = NSAlert()
         alert.messageText = title
         alert.informativeText = message
-        let ok = alert.addButton(withTitle: "확인")
-        alert.addButton(withTitle: "취소")
+        let ok = alert.addButton(withTitle: L("prompt.ok"))
+        alert.addButton(withTitle: L("prompt.cancel"))
 
         let formatter = NumberFormatter()
         formatter.numberStyle = .none

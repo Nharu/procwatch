@@ -59,7 +59,7 @@ final class LoginItemController {
     /// 「로그인 항목 등록 실패 — 마지막 성공 빌드 N」. 실패가 없으면 nil.
     var failureLine: String? {
         guard lastFailure != nil else { return nil }
-        return "로그인 항목 등록 실패 — 마지막 성공 빌드 \(settings.launchAtLoginRegisteredBuild ?? "없음")"
+        return L("login.registerFailed", settings.launchAtLoginRegisteredBuild ?? L("login.noBuild"))
     }
 
     /// 규칙 4 — 메뉴 토글.
@@ -94,10 +94,10 @@ final class LoginItemController {
     static func unregisterAndExit() -> Never {
         do {
             try SMAppService.mainApp.unregister()
-            FileHandle.standardError.write(Data("procwatch: 로그인 항목 등록 해제됨\n".utf8))
+            FileHandle.standardError.write(Data("procwatch: login item unregistered\n".utf8))
             exit(0)
         } catch {
-            FileHandle.standardError.write(Data("procwatch: 로그인 항목 등록 해제 실패 — \(error)\n".utf8))
+            FileHandle.standardError.write(Data("procwatch: failed to unregister login item — \(error)\n".utf8))
             exit(1)
         }
     }

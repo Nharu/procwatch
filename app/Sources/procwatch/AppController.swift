@@ -82,8 +82,8 @@ final class AppController: NSObject, NSApplicationDelegate {
     private func promptThreshold() {
         let range = ThresholdSettings.cpuThresholdRange
         guard let value = CustomValuePrompt.ask(
-            title: "CPU 임계값 직접 입력",
-            message: "\(range.lowerBound)–\(range.upperBound) % (코어 1개 = 100%)",
+            title: L("prompt.thresholdTitle"),
+            message: L("prompt.thresholdMessage", range.lowerBound, range.upperBound),
             range: range,
             current: settings.thresholds.cpuThresholdPercent
         ) else { return }
@@ -95,8 +95,8 @@ final class AppController: NSObject, NSApplicationDelegate {
     private func promptSustain() {
         let range = ThresholdSettings.sustainMinutesRange
         guard let value = CustomValuePrompt.ask(
-            title: "지속 시간 직접 입력",
-            message: "\(range.lowerBound)–\(range.upperBound) 분",
+            title: L("prompt.sustainTitle"),
+            message: L("prompt.sustainMessage", range.lowerBound, range.upperBound),
             range: range,
             current: settings.thresholds.sustainMinutes
         ) else { return }

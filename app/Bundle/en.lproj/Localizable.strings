@@ -1,0 +1,53 @@
+/* Dropdown menu */
+"menu.framesUnavailable" = "Couldn't load kiwi images — monitoring is fine";
+"menu.starting" = "Starting…";
+"menu.idle" = "No claude processes — waiting";
+"menu.orphansOnly" = "claude: 0 · descendants still watched: %ld";
+"menu.watching" = "claude: %ld · descendants watched: %ld";
+"menu.rootCPUWarming" = "claude CPU: measuring…";
+"menu.rootCPU" = "claude peak CPU: %.0f%% · total: %.0f%%";
+"menu.unmeasurable" = "unmeasurable descendants: %ld";
+"menu.clockSuspect" = "Clock units look wrong — judgments may be off";
+"menu.runawayHeader" = "runaway: %ld";
+"menu.watchedHeader" = "watching: %ld";
+"menu.more" = "   more: %ld";
+"menu.cpuWarming" = "measuring…";
+"menu.cpuUnmeasurable" = "unmeasurable";
+"menu.runawayRow" = "   %@ · pid %ld · %@ · %ld min";
+"menu.watchedRow" = "   %@ · pid %ld · %@ · %ld/%ld min";
+"menu.version" = "procwatch %@ (build %@)";
+"menu.versionDevBuild" = "dev";
+"menu.help" = "Reported when a process's awake seconds with smoothed CPU at or above\nthe threshold outnumber those below it by a net %ld min.\nEach second below the threshold pays back one second above it.\nCleared after 2 min in a row under 80%% of the threshold, after paying\nback to half the report bar, or on exit. One banner per process.\nE.g. always busy → reported at 30 min. 15 min bursts at 75%% → 50 min.\n12 min bursts at 60%% → 110 min. Long bursts at exactly half → never.";
+"menu.helpTitle" = "How runaways are judged";
+"menu.threshold" = "CPU threshold: %ld%%";
+"menu.thresholdCustom" = "Custom: %ld%%";
+"menu.sustain" = "Sustain: %ld min";
+"menu.sustainPreset" = "%ld min";
+"menu.sustainCustom" = "Custom: %ld min";
+"menu.customEntry" = "Enter a value…";
+"menu.coreNote" = "1 core = 100%";
+"menu.walkPause" = "Pause walking animation";
+"menu.loginUnavailable" = "Launch at login (available when installed in /Applications)";
+"menu.login" = "Launch at login";
+"menu.notificationsOn" = "Notifications: on";
+"menu.notificationsOff" = "Notifications off — Open notification settings…";
+"menu.quit" = "Quit procwatch";
+
+/* Notification banner */
+"notification.title" = "Runaway process detected";
+"notification.cpuUnmeasurable" = "CPU unmeasurable";
+"notification.body" = "%@ (pid %ld) — %@, %ld min";
+"notification.under" = " · under %@";
+"notification.more" = " · more: %ld";
+
+/* Custom value prompt */
+"prompt.thresholdTitle" = "Enter CPU threshold";
+"prompt.thresholdMessage" = "%ld–%ld%% (1 core = 100%%)";
+"prompt.sustainTitle" = "Enter sustain time";
+"prompt.sustainMessage" = "%ld–%ld min";
+"prompt.ok" = "OK";
+"prompt.cancel" = "Cancel";
+
+/* Login item status line */
+"login.registerFailed" = "Login item registration failed — last successful build: %@";
+"login.noBuild" = "none";

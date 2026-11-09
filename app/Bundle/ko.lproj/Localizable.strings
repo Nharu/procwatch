@@ -1,0 +1,53 @@
+/* 드롭다운 메뉴 */
+"menu.framesUnavailable" = "키위 이미지를 읽지 못함 — 감시는 정상";
+"menu.starting" = "시작 중…";
+"menu.idle" = "claude 프로세스 없음 — 대기 중";
+"menu.orphansOnly" = "claude 없음 · 후손 %ld개 계속 감시 중";
+"menu.watching" = "claude %ld개 · 후손 %ld개 감시 중";
+"menu.rootCPUWarming" = "claude CPU 측정 중…";
+"menu.rootCPU" = "claude 최고 CPU %.0f%% · 합계 %.0f%%";
+"menu.unmeasurable" = "측정 불가 후손 %ld개";
+"menu.clockSuspect" = "시간 단위 이상 — 판정이 틀릴 수 있음";
+"menu.runawayHeader" = "폭주 %ld건";
+"menu.watchedHeader" = "지켜보는 중 %ld건";
+"menu.more" = "   외 %ld건";
+"menu.cpuWarming" = "측정 중…";
+"menu.cpuUnmeasurable" = "측정 불가";
+"menu.runawayRow" = "   %@ · pid %ld · %@ · %ld분째";
+"menu.watchedRow" = "   %@ · pid %ld · %@ · %ld/%ld분";
+"menu.version" = "procwatch %@ (빌드 %@)";
+"menu.versionDevBuild" = "개발";
+"menu.help" = "프로세스의 평활 CPU가 임계 이상인 깨어 있는 초가\n임계 미만인 초보다 순으로 %ld분 많아지면 보고한다.\n임계 미만인 1초가 임계 이상인 1초를 갚는다.\n임계의 80 %% 아래로 2분 연속 가라앉거나, 보고 기준의 절반까지\n갚거나, 끝나면 해소된다. 배너는 프로세스마다 한 번이다.\n예: 늘 바쁨 → 30분에 보고. 15분 블록으로 75 %% → 50분.\n12분 블록으로 60 %% → 110분. 긴 블록으로 정확히 절반 → 보고 안 함.";
+"menu.helpTitle" = "판정 기준 설명";
+"menu.threshold" = "CPU 임계값: %ld%%";
+"menu.thresholdCustom" = "사용자 지정: %ld%%";
+"menu.sustain" = "지속 시간: %ld분";
+"menu.sustainPreset" = "%ld분";
+"menu.sustainCustom" = "사용자 지정: %ld분";
+"menu.customEntry" = "직접 입력…";
+"menu.coreNote" = "코어 1개 = 100%";
+"menu.walkPause" = "걸음 애니메이션 멈춤";
+"menu.loginUnavailable" = "로그인 시 자동 실행 (/Applications 에 설치하면 사용 가능)";
+"menu.login" = "로그인 시 자동 실행";
+"menu.notificationsOn" = "알림: 켜짐";
+"menu.notificationsOff" = "알림 꺼짐 — 알림 설정 열기…";
+"menu.quit" = "procwatch 종료";
+
+/* 알림 배너 */
+"notification.title" = "폭주 프로세스 감지";
+"notification.cpuUnmeasurable" = "CPU 측정 불가";
+"notification.body" = "%@ (pid %ld) — %@, %ld분째";
+"notification.under" = " · %@ 아래";
+"notification.more" = " 외 %ld건";
+
+/* 직접 입력 창 */
+"prompt.thresholdTitle" = "CPU 임계값 직접 입력";
+"prompt.thresholdMessage" = "%ld–%ld %% (코어 1개 = 100%%)";
+"prompt.sustainTitle" = "지속 시간 직접 입력";
+"prompt.sustainMessage" = "%ld–%ld 분";
+"prompt.ok" = "확인";
+"prompt.cancel" = "취소";
+
+/* 로그인 항목 상태 줄 */
+"login.registerFailed" = "로그인 항목 등록 실패 — 마지막 성공 빌드 %@";
+"login.noBuild" = "없음";

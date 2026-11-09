@@ -29,7 +29,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             frames = try KiwiFrames.load()
         } catch {
             frames = nil
-            FileHandle.standardError.write(Data("procwatch: 키위 이미지 파생 실패 — \(error)\n".utf8))
+            FileHandle.standardError.write(Data("procwatch: failed to derive kiwi images — \(error)\n".utf8))
         }
         super.init()
 
