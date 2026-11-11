@@ -60,7 +60,7 @@ final class ReleasePackagingTests: XCTestCase {
         let major = try XCTUnwrap(declared.split(separator: ".").first.flatMap { Int($0) })
         let expected = try XCTUnwrap(Self.macOSNames[major], "macOS \(major) 의 cask 이름이 시험 표에 없다")
 
-        let names = try Self.captures(#"depends_on macos: ">= :([a-z_]+)""#, in: cask)
+        let names = try Self.captures(#"depends_on macos: :([a-z_]+)\n"#, in: cask)
         XCTAssertEqual(names, [expected], "depends_on macos 는 LSMinimumSystemVersion \(declared) 과 짝이어야 한다")
     }
 
