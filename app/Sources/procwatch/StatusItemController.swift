@@ -10,44 +10,72 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     private let statusItem: NSStatusItem
     private let menu = NSMenu()
     private let builder: MenuBuilder
-    private let frames: KiwiFrames?
+    private let library: ThemeLibrary
+    private var frames: KiwiFrames?
     private var animator: KiwiAnimator?
     private var frameLayer: CALayer?
 
     private var snapshot: WatchSnapshot?
     private var runaway = false
+    private var walkPaused = false
     private var menuOpen = false
     private var visibilityObservation: NSKeyValueObservation?
     private var occlusionObserver: NSObjectProtocol?
 
-    init(builder: MenuBuilder) {
+    /// 지금 그리고 있는 설정과, 그 설정의 테마를 읽지 못해 물러났으면 그 이름.
+    private var appearance: SettingsStore.IconAppearance
+    private var failedTheme: String?
+
+    init(builder: MenuBuilder, library: ThemeLibrary, appearance: SettingsStore.IconAppearance) {
         self.builder = builder
+        self.library = library
+        self.appearance = appearance
         statusItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
         statusItem.autosaveName = "procwatch"
-
-        do {
-            frames = try KiwiFrames.load()
-        } catch {
-            frames = nil
-            FileHandle.standardError.write(Data("procwatch: failed to derive kiwi images — \(error)\n".utf8))
-        }
         super.init()
 
-        builder.framesUnavailable = frames == nil
         menu.delegate = self
         statusItem.menu = menu
         statusItem.button?.imagePosition = .imageOnly
+        setIconAppearance(appearance)
+    }
 
-        if frames != nil {
+    /// 프레임을 바꿔 끼우는 진입점. 실행 시, 설정을 바꿀 때, 메뉴를 열어 판정이 달라졌을 때
+    /// 부른다. 폭주 중이면 새 프레임의 빨강으로 바로 그린다.
+    func setIconAppearance(_ appearance: SettingsStore.IconAppearance) {
+        self.appearance = appearance
+        let resolution = library.resolve(appearance)
+        frames = resolution.frames
+        failedTheme = resolution.failedTheme
+        builder.framesUnavailable = frames == nil
+        builder.themeFailure = resolution.failedTheme
+
+        guard frames != nil else {
+            // 걸음과 빨강은 프레임이 다시 생길 때까지 꺼지고, 판정과 알림은 그대로 돈다.
+            showFallbackSymbol()
+            return
+        }
+        if let animator {
+            animator.redraw()
+        } else {
+            // 애니메이터는 처음 그리는 프레임이 생길 때 한 번만 세운다.
             let animator = KiwiAnimator { [weak self] index in self?.render(index) }
             self.animator = animator
+            animator.setUserPaused(walkPaused)
+            if let snapshot {
+                animator.update(peakPercent: snapshot.rootPeakPercent, rootCount: snapshot.rootCount)
+            }
             observeVisibility()
-        } else {
-            // 걸음과 빨강은 이 실행 동안 꺼지고, 판정과 알림은 그대로 돈다.
-            let image = NSImage(systemSymbolName: Self.fallbackSymbol, accessibilityDescription: "procwatch")
-            image?.isTemplate = true
-            statusItem.button?.image = image
         }
+    }
+
+    private func showFallbackSymbol() {
+        guard let button = statusItem.button else { return }
+        let image = NSImage(systemSymbolName: Self.fallbackSymbol, accessibilityDescription: "procwatch")
+        image?.isTemplate = true
+        button.contentTintColor = nil
+        frameLayer?.contents = nil
+        button.image = image
     }
 
     /// 스냅숏 하나를 반영한다. 레벨은 에지로만 바뀐다 — `anyRunaway` 를 그대로 그린다.
@@ -69,6 +97,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     /// 걸음 멈춤을 애니메이터에 넘긴다. 키위 이미지가 없으면 아무 일도 하지 않는다.
     func setWalkPaused(_ paused: Bool) {
+        walkPaused = paused
         animator?.setUserPaused(paused)
     }
 
@@ -84,6 +113,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let image: NSImage
         var tint: NSColor?
         switch (runaway, RedStyle.redMechanism) {
+        case (true, _) where frames.isUserTheme:
+            // 사용자 테마는 틴트와 「!」 세트를 쓰지 않고 늘 빨강 세트로 그린다.
+            image = frames.runaway[index]
         case (false, _):
             image = frames.template[index]
         case (true, .imageSwap):
@@ -106,6 +138,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     /// 상태 버튼 레이어의 하위 `CALayer.contents` 교체. 외형이 바뀌면 이미지가 다시 해석된다.
     private func setLayerContents(_ image: NSImage, on button: NSStatusBarButton) {
+        let size = frames?.size ?? image.size
         button.wantsLayer = true
         if frameLayer == nil, let host = button.layer {
             let layer = CALayer()
@@ -115,14 +148,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             frameLayer = layer
         }
         guard let layer = frameLayer else { return }
-        if button.image == nil {
-            // 폭을 잡아 둘 투명 자리표시.
-            button.image = NSImage(size: KiwiFrames.pointSize)
+        if button.image?.size != size {
+            // 폭을 잡아 둘 투명 자리표시. 테마·크기를 바꾸면 새 크기로 다시 둔다.
+            button.image = NSImage(size: size)
         }
         layer.frame = button.bounds
         var appearanceImage: CGImage?
         button.effectiveAppearance.performAsCurrentDrawingAppearance {
-            var rect = CGRect(origin: .zero, size: KiwiFrames.pointSize)
+            var rect = CGRect(origin: .zero, size: size)
             appearanceImage = image.cgImage(forProposedRect: &rect, context: nil, hints: nil)
         }
         layer.contentsScale = button.window?.backingScaleFactor ?? 2
@@ -150,6 +183,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     // MARK: - NSMenuDelegate
 
     func menuNeedsUpdate(_ menu: NSMenu) {
+        // 테마 폴더는 감시하지 않고 메뉴를 열 때 다시 읽는다. 고른 테마의 판정이 지금 그리는
+        // 상태와 다르면(지워졌거나 고쳐졌으면) 프레임을 다시 만든 뒤 항목을 짓는다.
+        let themes = library.items()
+        builder.themeItems = themes
+        builder.kiwiThumbnail = library.kiwiThumbnail
+        if let name = appearance.theme {
+            let readable = themes.first { $0.name == name }?.readable ?? false
+            if readable != (failedTheme == nil) { setIconAppearance(appearance) }
+        }
         menu.removeAllItems()
         builder.items(for: snapshot).forEach(menu.addItem)
     }

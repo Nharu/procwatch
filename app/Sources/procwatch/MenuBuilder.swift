@@ -13,9 +13,16 @@ final class MenuBuilder: NSObject {
     private let notifier: Notifier
     /// 파생이 실패해 대체 아이콘으로 떠 있는가.
     var framesUnavailable = false
+    /// 고른 테마를 읽지 못해 키위로 물러났으면 그 이름.
+    var themeFailure: String?
+    /// 메뉴를 열 때 다시 읽은 테마 목록.
+    var themeItems: [ThemeLibrary.Item] = []
+    var kiwiThumbnail: NSImage?
     /// 「직접 입력…」이 부른다.
     var onCustomThreshold: (() -> Void)?
     var onCustomSustain: (() -> Void)?
+    /// 「테마 폴더 열기…」가 부른다.
+    var onOpenThemesFolder: (() -> Void)?
 
     init(settings: SettingsStore, loginItem: LoginItemController, notifier: Notifier) {
         self.settings = settings
@@ -28,6 +35,7 @@ final class MenuBuilder: NSObject {
     func items(for snapshot: WatchSnapshot?, now: Date = Date()) -> [NSMenuItem] {
         var items: [NSMenuItem] = []
         if framesUnavailable { items.append(info(L("menu.framesUnavailable"))) }
+        if let themeFailure { items.append(info(L("menu.themeFailed", themeFailure))) }
 
         items.append(info(Self.headline(snapshot)))
         if let snapshot {
@@ -67,6 +75,7 @@ final class MenuBuilder: NSObject {
         items.append(contentsOf: settingsItems())
         items.append(.separator())
         if !framesUnavailable { items.append(walkPauseItem()) }
+        items.append(themeItem())
         items.append(contentsOf: loginItems())
         items.append(notificationItem())
         items.append(.separator())
@@ -250,6 +259,86 @@ final class MenuBuilder: NSObject {
     }
 
     @objc private func toggleWalkPaused(_ sender: NSMenuItem) { settings.walkPaused.toggle() }
+
+    /// 「테마: <이름>」과 하위 메뉴. 프레임이 없어도 늘 보인다. 목록·체크 표시·비활성 체크
+    /// 항목·구분선 뒤 동작 항목은 임계값 하위 메뉴와 같은 모양이다.
+    private func themeItem() -> NSMenuItem {
+        let appearance = settings.iconAppearance
+        let selected = appearance.theme
+        let item = NSMenuItem(title: L("menu.theme", selected ?? L("menu.themeDefault")), action: nil, keyEquivalent: "")
+        let themeMenu = NSMenu()
+
+        let kiwi = NSMenuItem(title: L("menu.themeDefault"), action: #selector(pickTheme(_:)), keyEquivalent: "")
+        kiwi.target = self
+        kiwi.image = kiwiThumbnail
+        kiwi.state = selected == nil ? .on : .off
+        themeMenu.addItem(kiwi)
+
+        for theme in themeItems {
+            let entry: NSMenuItem
+            if theme.readable {
+                entry = NSMenuItem(title: theme.name, action: #selector(pickTheme(_:)), keyEquivalent: "")
+                entry.target = self
+                entry.representedObject = theme.name
+                entry.image = theme.thumbnail
+            } else {
+                entry = NSMenuItem(title: L("menu.themeInvalid", theme.name), action: nil, keyEquivalent: "")
+                entry.isEnabled = false
+            }
+            entry.state = theme.name == selected ? .on : .off
+            themeMenu.addItem(entry)
+        }
+        if let selected, !themeItems.contains(where: { $0.name == selected }) {
+            // 폴더가 지워졌어도 고른 값은 남기고, 고칠 때까지 체크된 비활성 항목으로 보인다.
+            let missing = NSMenuItem(title: L("menu.themeInvalid", selected), action: nil, keyEquivalent: "")
+            missing.state = .on
+            missing.isEnabled = false
+            themeMenu.addItem(missing)
+        }
+
+        themeMenu.addItem(.separator())
+        themeMenu.addItem(iconSizeItem(appearance.height))
+        let outline = NSMenuItem(title: L("menu.themeOutline"), action: #selector(toggleThemeOutline(_:)), keyEquivalent: "")
+        outline.target = self
+        outline.state = appearance.outline ? .on : .off
+        themeMenu.addItem(outline)
+        themeMenu.addItem(.separator())
+        let openFolder = NSMenuItem(title: L("menu.themeOpenFolder"), action: #selector(openThemesFolder(_:)), keyEquivalent: "")
+        openFolder.target = self
+        themeMenu.addItem(openFolder)
+
+        item.submenu = themeMenu
+        return item
+    }
+
+    private func iconSizeItem(_ current: IconHeight) -> NSMenuItem {
+        let currentTitle: String
+        switch current {
+        case .standard: currentTitle = L("menu.iconSizeDefault")
+        case .points(let value): currentTitle = L("menu.iconSizePoints", value)
+        }
+        let item = NSMenuItem(title: L("menu.iconSize", currentTitle), action: nil, keyEquivalent: "")
+        let sizeMenu = NSMenu()
+        let standard = NSMenuItem(title: L("menu.iconSizeDefault"), action: #selector(pickIconHeight(_:)), keyEquivalent: "")
+        standard.target = self
+        standard.tag = IconHeight.standard.storedValue
+        standard.state = current == .standard ? .on : .off
+        sizeMenu.addItem(standard)
+        for value in IconHeight.choices {
+            let choice = NSMenuItem(title: L("menu.iconSizePoints", value), action: #selector(pickIconHeight(_:)), keyEquivalent: "")
+            choice.target = self
+            choice.tag = value
+            choice.state = current == .points(value) ? .on : .off
+            sizeMenu.addItem(choice)
+        }
+        item.submenu = sizeMenu
+        return item
+    }
+
+    @objc private func pickTheme(_ sender: NSMenuItem) { settings.setTheme(sender.representedObject as? String) }
+    @objc private func pickIconHeight(_ sender: NSMenuItem) { settings.iconHeight = IconHeight(stored: sender.tag) }
+    @objc private func toggleThemeOutline(_ sender: NSMenuItem) { settings.themeOutline.toggle() }
+    @objc private func openThemesFolder(_ sender: NSMenuItem) { onOpenThemesFolder?() }
 
     private func loginItems() -> [NSMenuItem] {
         var items: [NSMenuItem] = []

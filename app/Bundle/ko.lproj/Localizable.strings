@@ -27,6 +27,15 @@
 "menu.customEntry" = "직접 입력…";
 "menu.coreNote" = "코어 1개 = 100%";
 "menu.walkPause" = "걸음 애니메이션 멈춤";
+"menu.theme" = "테마: %@";
+"menu.themeDefault" = "키위(기본)";
+"menu.themeInvalid" = "%@ (읽을 수 없음)";
+"menu.themeFailed" = "테마 ‘%@’ 를 읽지 못해 키위로 표시 중";
+"menu.iconSize" = "아이콘 크기: %@";
+"menu.iconSizeDefault" = "기본";
+"menu.iconSizePoints" = "%ld pt";
+"menu.themeOutline" = "어두운 막대에서 밝은 외곽선";
+"menu.themeOpenFolder" = "테마 폴더 열기…";
 "menu.loginUnavailable" = "로그인 시 자동 실행 (/Applications 에 설치하면 사용 가능)";
 "menu.login" = "로그인 시 자동 실행";
 "menu.notificationsOn" = "알림: 켜짐";

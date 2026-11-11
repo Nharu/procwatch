@@ -27,6 +27,15 @@
 "menu.customEntry" = "Enter a value…";
 "menu.coreNote" = "1 core = 100%";
 "menu.walkPause" = "Pause walking animation";
+"menu.theme" = "Theme: %@";
+"menu.themeDefault" = "Kiwi (default)";
+"menu.themeInvalid" = "%@ (can't read)";
+"menu.themeFailed" = "Couldn't read theme “%@” — showing the kiwi";
+"menu.iconSize" = "Icon size: %@";
+"menu.iconSizeDefault" = "Default";
+"menu.iconSizePoints" = "%ld pt";
+"menu.themeOutline" = "Light outline on dark menu bar";
+"menu.themeOpenFolder" = "Open Themes Folder…";
 "menu.loginUnavailable" = "Launch at login (available when installed in /Applications)";
 "menu.login" = "Launch at login";
 "menu.notificationsOn" = "Notifications: on";

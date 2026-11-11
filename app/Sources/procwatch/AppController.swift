@@ -26,12 +26,16 @@ final class AppController: NSObject, NSApplicationDelegate {
         let builder = MenuBuilder(settings: settings, loginItem: loginItem, notifier: notifier)
         builder.onCustomThreshold = { [weak self] in self?.promptThreshold() }
         builder.onCustomSustain = { [weak self] in self?.promptSustain() }
-        let statusItem = StatusItemController(builder: builder)
+        let library = ThemeLibrary()
+        builder.onOpenThemesFolder = { [library] in library.openFolder() }
+        let statusItem = StatusItemController(builder: builder, library: library, appearance: settings.iconAppearance)
         statusItem.onMenuWillOpen = { [notifier] in await notifier.refreshAuthorization() }
         self.statusItem = statusItem
         // 엔진이 돌기 전에 적용해 재시작 직후에도 한 프레임도 걷지 않는다.
         statusItem.setWalkPaused(settings.walkPaused)
         settings.onWalkPausedChange = { [weak statusItem] paused in statusItem?.setWalkPaused(paused) }
+        // 테마·크기·외곽선은 재시작 없이 바로 바꿔 끼운다.
+        settings.onIconAppearanceChange = { [weak statusItem] appearance in statusItem?.setIconAppearance(appearance) }
         notifier.onActivate = { [weak statusItem] in statusItem?.openMenu() }
 
         let engine = SamplerEngine(
