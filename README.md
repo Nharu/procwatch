@@ -29,6 +29,7 @@ A kiwi sprite walks in the menu bar.
 - Normally: a monochrome template image — the system flips it to match the menu bar background
 - When a runaway is detected: system red (`NSColor.systemRed`), left to the system for light and dark appearances
 - Walking speed follows the CPU usage of the `claude` processes; the walk can be paused from the menu
+- The kiwi can be swapped for your own sprite and resized — see [Themes](#themes)
 
 ## Install
 
@@ -58,6 +59,30 @@ menu shows an item that opens the notification settings for procwatch.
 
 Turn launch at login on or off from the menu. The item is available only when the app is
 installed in `/Applications`.
+
+## Themes
+
+The bundled kiwi is the only built-in theme. You can add your own sprites as themes.
+
+- Location: `~/Library/Application Support/procwatch/themes/<name>/` — the folder name is the theme
+  name. **Open Themes Folder…** in the menu creates the folder if needed and opens it in Finder.
+- Frames: four PNG files `00@2x.png`, `01@2x.png`, `02@2x.png`, `03@2x.png`, each exactly 48x32 px
+  (@2x). Other files in the folder are ignored.
+- Optional `theme.json`: `{"template": true}` draws the theme as a monochrome template image that
+  the system flips to match the menu bar; without the file, or with `false`, the frames are drawn in
+  their own colors. Unknown fields are ignored.
+- Runaway: a color theme is washed with 60% system red; a monochrome theme is filled with system red
+  in its own shape, like the kiwi.
+- Pick a theme from the **Theme** submenu in the menu. The change applies right away, without a
+  restart.
+- **Icon size** in the same submenu: Default (kiwi 16 pt, your themes 22 pt), 16 pt, 19 pt or 22 pt,
+  applied to every theme including the kiwi.
+- **Light outline on dark menu bar**: draws a 1 px light outline around a color theme while the menu
+  bar is dark, so dark sprites stay visible.
+- If the chosen theme can't be read (a missing or wrong-sized frame, a malformed `theme.json`, a
+  deleted folder), the kiwi is shown instead and the menu says so in one line. Your choice is kept,
+  and the theme comes back once the folder is fixed — it is checked again each time the menu opens.
+- Uninstalling the app does not remove the themes folder.
 
 ## Uninstall
 

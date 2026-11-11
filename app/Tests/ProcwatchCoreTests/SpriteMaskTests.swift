@@ -80,4 +80,33 @@ final class SpriteMaskTests: XCTestCase {
             }
         }
     }
+
+    /// 아이콘 크기 16 pt 는 지금의 키위 그대로다.
+    func testScalingToSixteenKeepsTheOriginalPair() throws {
+        let pair = try KiwiMask.derive(pngData: Self.frameData(0))
+        XCTAssertEqual(KiwiMask.scaled(pair, height: 16), pair)
+    }
+
+    /// 22 pt 는 원본에서 최근접으로 키우고, 눈 구멍이 확대 뒤에도 뚫려 있다.
+    func testScalingToTwentyTwoKeepsTheEyeHole() throws {
+        let pair = KiwiMask.scaled(try KiwiMask.derive(pngData: Self.frameData(0)), height: 22)
+        XCTAssertEqual(pair.scale1x.width, 33)
+        XCTAssertEqual(pair.scale1x.height, 22)
+        XCTAssertEqual(pair.scale2x.width, 66)
+        XCTAssertEqual(pair.scale2x.height, 44)
+
+        for bitmap in [pair.scale1x, pair.scale2x] {
+            var eyePixels = 0
+            for y in 0..<bitmap.height {
+                for x in 0..<bitmap.width {
+                    let sourceX = x * 24 / bitmap.width
+                    let sourceY = y * 16 / bitmap.height
+                    guard 10...11 ~= sourceX, 6...7 ~= sourceY else { continue }
+                    eyePixels += 1
+                    XCTAssertEqual(bitmap.alpha(x: x, y: y), 0, "\(bitmap.width)x\(bitmap.height) 눈 (\(x), \(y))")
+                }
+            }
+            XCTAssertGreaterThan(eyePixels, 0)
+        }
+    }
 }

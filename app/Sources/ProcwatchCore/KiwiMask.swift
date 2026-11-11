@@ -60,7 +60,19 @@ public enum KiwiMask {
     /// 눈 픽셀. 이 색만 알파 0 으로 뚫어 template 에서도 눈이 남는다.
     public static let eyeColor: (r: UInt8, g: UInt8, b: UInt8) = (56, 56, 56)
 
+    /// 원본 키위의 높이(px). 이 높이로 확대하면 원본 쌍을 그대로 돌려준다.
+    public static let baseHeight = 16
+
     public static func derive(pngData: Data) throws -> KiwiMaskPair {
+        let decoded = try decodeRGBA(pngData: pngData)
+        let mask = maskPixels(from: decoded.rgba, width: decoded.width, height: decoded.height)
+        let base = MaskBitmap(width: decoded.width, height: decoded.height, rgba: mask)
+        return KiwiMaskPair(scale1x: base, scale2x: doubled(base))
+    }
+
+    /// PNG 바이트를 색 그대로 RGBA8(행 0 이 위, premultipliedLast)로 편다. 사용자 테마의
+    /// 컬러 프레임도 이 경로로 읽는다.
+    static func decodeRGBA(pngData: Data) throws -> MaskBitmap {
         guard let source = CGImageSourceCreateWithData(pngData as CFData, nil),
               let image = CGImageSourceCreateImageAtIndex(source, 0, nil)
         else { throw KiwiMaskError.decodeFailed }
@@ -68,11 +80,35 @@ public enum KiwiMask {
         let width = image.width
         let height = image.height
         guard width > 0, height > 0 else { throw KiwiMaskError.emptyImage }
+        return MaskBitmap(width: width, height: height, rgba: try decode(image, width: width, height: height))
+    }
 
-        let decoded = try decode(image, width: width, height: height)
-        let mask = maskPixels(from: decoded, width: width, height: height)
-        let base = MaskBitmap(width: width, height: height, rgba: mask)
-        return KiwiMaskPair(scale1x: base, scale2x: doubled(base))
+    /// 키위 마스크 쌍을 높이 `height`(pt) 로 최근접 확대한다. 원본 높이면 원본 쌍 그대로다.
+    /// 아니면 @1x 는 원본 비율대로 반올림한 너비 × `height`, @2x 는 그 두 배 크기이고 둘 다
+    /// 원본 @1x 에서 확대한다 — 알파 0 인 눈 구멍도 그대로 따라온다.
+    public static func scaled(_ pair: KiwiMaskPair, height: Int) -> KiwiMaskPair {
+        guard height != baseHeight else { return pair }
+        let source = pair.scale1x
+        let width = Int((Double(source.width) * Double(height) / Double(source.height)).rounded())
+        return KiwiMaskPair(
+            scale1x: nearest(source, width: width, height: height),
+            scale2x: nearest(source, width: width * 2, height: height * 2)
+        )
+    }
+
+    /// 최근접 이웃 확대·축소. 대상 픽셀 (x, y) 는 원본 (x·w/W, y·h/H) 의 내림을 그대로 옮긴다.
+    public static func nearest(_ bitmap: MaskBitmap, width: Int, height: Int) -> MaskBitmap {
+        var rgba = [UInt8](repeating: 0, count: width * height * 4)
+        for y in 0..<height {
+            let sourceY = y * bitmap.height / height
+            for x in 0..<width {
+                let sourceX = x * bitmap.width / width
+                let source = (sourceY * bitmap.width + sourceX) * 4
+                let target = (y * width + x) * 4
+                for channel in 0..<4 { rgba[target + channel] = bitmap.rgba[source + channel] }
+            }
+        }
+        return MaskBitmap(width: width, height: height, rgba: rgba)
     }
 
     /// 어떤 PNG 가 들어와도 같은 배치(RGBA8, 행 0 이 위)로 펴서 읽는다.
